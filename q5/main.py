@@ -47,10 +47,13 @@ class ScraperXRT:
 
         r = requests.get('http://solar.physics.montana.edu/HINODE/XRT/QL/syn_comp_fits/')
         soup = BeautifulSoup(r.content , 'html5lib')
-        q = 'XRT_' + self.tof + '_' + self.st + '_' + self.et
+        q = 'XRT_' + self.tof
         for i in soup.findAll('a'):
             name = i.get('href')
-            if q in name:
+            d = name.split('_')
+            sta = d[3]
+            end = d[4]
+            if q in name and (sta > self.st and end < st.en):
                 self.urls.append('http://solar.physics.montana.edu/HINODE/XRT/QL/syn_comp_fits/' + name)
         return self.urls
 
@@ -89,6 +92,7 @@ class ScraperXRT:
         plt.show()
 
 example = ScraperXRT("Ti_poly" , "20150426" , "214354")
+
 urls = example.query()
 downloads = example.get()
 example.view(downloads[0])
