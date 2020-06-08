@@ -1,15 +1,35 @@
 # all imports below
+from astropy.coordinates import SkyCoord  # High-level coordinates
+from astropy.coordinates import ICRS, GCRS, CartesianDifferential, CartesianRepresentation
+from astropy.coordinates import Angle, Latitude, Longitude  # Angles
+import astropy.units as u
 
+from poliastro.plotting import OrbitPlotter2D, OrbitPlotter3D
+from poliastro.bodies import Earth
+
+from poliastro.twobody.orbit import Orbit
 """
 Any extra lines of code (if required)
 as helper for this function.
 """
-def findDist(v, theta):
-	g = 9.807 
-	h = 8848
-	t = math.sqrt((2*g*h) + v*v*math.sin(theta)*math.sin(theta))
-	return t*v*math.cos(theta)/g
 
+def CartesianToSpherical(x, y, z):
+	r = math.sqrt(x*x + y*y + z*z)
+	alt = math.atan(y/x)
+	az = math.acos(z/r)
+	return [r, alt, az]
+
+def sphericalToCartesian(v, alt, az):
+	x = v*math.cos(alt)*math.sin(az)
+	y = v*math.cos(alt)*math.cos(az)
+	z = v*math.sin(alt)
+	return [x, y, z]
+
+def timeOfFlight(e):
+	f = 1-e
+	alpha = Earth.R.to(u.km).value / (Earth.R.to(u.km).value + 8.848)
+	minutes = 13.5*math.acos((1-alpha*(2-f))/math.sqrt(pow((3-alpha*(2-f)),2) - 4*alpha/f))
+	return minutes*u.min
 
 def findstrike(velocity, alt, az):
 	'''
@@ -23,15 +43,19 @@ def findstrike(velocity, alt, az):
 	-------
 	A `tuple` of two floats
 	'''
-
-	v = velocity
-	lat1 = 27.9881
-	lon1 = 86.9250
-	earth_radius = 6.3781e6
-	distance = findDist(v, math.radians(alt))
-	b = distance/earth_radius
-	a = math.acos(math.cos(b)*math.cos(90-lat1) + math.sin(90-lat1)*math.sin(b)*math.cos(az))
-	B = math.asin(math.sin(b)*math.sin(az)/math.sin(a))
-	lat2 = 90 - a
-	lon2 = B + lon1
-	return [lat2, lon2]
+	p = sphericalToCartesian(velocity, alt, az)
+	vx = p[0]
+	vy = p[1]
+	vz = p[2]
+	g = GCRS(x=0*u.km, y=0*u.km, z=(Earth.R.to(u.km).value + 8.848)*u.km, v_x=vx*u.km/u.s, v_y=vy*u.km/u.s, v_z=vz*u.km/u.s,
+	representation_type=CartesianRepresentation, differential_type=CartesianDifferential)
+	orb = Orbit.from_coords(Earth, g)
+	tof = timeOfFlight(orb.ecc.value)
+	orb2 = orb.propagate(tof)
+	position = orb.r.value
+	m = CartesianToSpherical(position[0], position[1], position[2])
+	alt = m[1] * u.rad
+	az = m[2] * u.rad
+	altd = alt.to(u.deg)
+	azd = az.to(u.deg)
+	return altd, azd
