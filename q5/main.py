@@ -90,9 +90,3 @@ class ScraperXRT:
         plt.imshow(image_data, cmap='gray')
         plt.colorbar()
         plt.show()
-
-example = ScraperXRT("Ti_poly" , "20150426" , "214354")
-
-urls = example.query()
-downloads = example.get()
-example.view(downloads[0])
