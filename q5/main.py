@@ -3,7 +3,7 @@
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
-import datetime
+from datetime import datetime
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.utils.data import get_pkg_data_filename
@@ -50,11 +50,13 @@ class ScraperXRT:
         q = 'XRT_' + self.tof
         for i in soup.findAll('a'):
             name = i.get('href')
-            d = name.split('_')
-            sta = d[3]
-            end = d[4]
-            if q in name and (sta > self.st and end < st.en):
-                self.urls.append('http://solar.physics.montana.edu/HINODE/XRT/QL/syn_comp_fits/' + name)
+            if q in name:
+                d = name.split('_')
+                sta = d[3]
+                end = d[4]
+                time = datetime(int(sta[:4]),int(sta[4:6]) ,int(sta[6:8]) , int(end[:2]), int(end[2:4]), int(end[4:6]), 0)
+                if time >= self.st and time <= self.et:
+                    self.urls.append('http://solar.physics.montana.edu/HINODE/XRT/QL/syn_comp_fits/' + name)
         return self.urls
 
     def get(self):
@@ -79,7 +81,6 @@ class ScraperXRT:
         Parameters
         ----------
         filepath: A `string` representing absolute path of file in system.
-
         Returns
         -------
         An instance of `matplotlib.image.AxesImage`, returned using `plt.imshow(data)`.
@@ -90,3 +91,12 @@ class ScraperXRT:
         plt.imshow(image_data, cmap='gray')
         plt.colorbar()
         plt.show()
+
+# start = datetime(2013,7 , 9, 0, 1, 39, 642080)
+# end = datetime(2016,7 , 9, 0, 1, 39, 642080)
+# example = ScraperXRT("Al_mesh" , start , end)
+# urls = example.query()
+# print(urls)
+# downloads = example.get()
+# example.view(downloads[0])
+# print(downloads)
