@@ -20,5 +20,5 @@ def findDistance(vrec):
 	mpar = 1000000 * u.parsec
 	H = 71 * u.km / u.s / mpar
 	D = vrec / H
-	D = D.to(lyr)
+	D = D.to(u.lyr)
 	return D.value
